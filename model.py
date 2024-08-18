@@ -140,9 +140,9 @@ test_transforms = transforms.Compose([
                                         transforms.Resize((im_size,im_size)),
                                         transforms.ToTensor(),
                                         transforms.Normalize(mean,std)])
-train_data = video_dataset(train_videos,labels,sequence_length = 10,transform = train_transforms)
+train_data = video_dataset(train_videos,labels,sequence_length = 100,transform = train_transforms)
 #print(train_data)
-val_data = video_dataset(valid_videos,labels,sequence_length = 10,transform = train_transforms)
+val_data = video_dataset(valid_videos,labels,sequence_length = 100,transform = train_transforms)
 
 def custom_collate_fn(batch):
     frames, labels = zip(*batch)
@@ -186,6 +186,8 @@ import os
 import sys
 import os
 def train_epoch(epoch, num_epochs, data_loader, model, criterion, optimizer):
+    print()
+    print('Training')
     model.train()
     losses = AverageMeter()
     accuracies = AverageMeter()
@@ -214,6 +216,7 @@ def train_epoch(epoch, num_epochs, data_loader, model, criterion, optimizer):
     torch.save(model.state_dict(), "/content/Data/Trained_Weight/checkpoint_epoch_%d.pt" % epoch)
     return losses.avg,accuracies.avg
 def test(epoch,model, data_loader ,criterion):
+    print()
     print('Testing')
     model.eval()
     losses = AverageMeter()
