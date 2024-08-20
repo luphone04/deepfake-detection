@@ -5,11 +5,18 @@ import cv2
 import copy
 import random
 
-video_files =  glob.glob('/content/Data/Celeb_fake_face_only/*.mp4')
-video_files += glob.glob('/content/Data/Celeb_real_face_only/*.mp4')
-video_files += glob.glob('/content/Data/DFDC_FAKE_Face_only_data/*.mp4')
-video_files += glob.glob('/content/Data/DFDC_REAL_Face_only_data/*.mp4')
-video_files += glob.glob('/content/Data/FF_Face_only_data/*.mp4')
+# video_files =  glob.glob('/content/Data/Celeb_fake_face_only/*.mp4')
+# video_files += glob.glob('/content/Data/Celeb_real_face_only/*.mp4')
+# video_files += glob.glob('/content/Data/DFDC_FAKE_Face_only_data/*.mp4')
+# video_files += glob.glob('/content/Data/DFDC_REAL_Face_only_data/*.mp4')
+# video_files += glob.glob('/content/Data/FF_Face_only_data/*.mp4')
+
+video_files =  glob.glob('/content/drive/My Drive/Face_only_data/Celeb_fake_face_only/*.mp4')
+video_files += glob.glob('/content/drive/My Drive/Face_only_data/Celeb_real_face_only/*.mp4')
+video_files += glob.glob('/content/drive/My Drive/Face_only_data/DFDC_FAKE_Face_only_data/*.mp4')
+video_files += glob.glob('/content/drive/My Drive/Face_only_data/DFDC_REAL_Face_only_data/*.mp4')
+video_files += glob.glob('/content/drive/My Drive/Face_only_data/FF_Face_only_data/*.mp4')
+
 
 
 # Shuffle the video files
@@ -28,7 +35,7 @@ import cv2
 import matplotlib.pyplot as plt
 import face_recognition
 class video_dataset(Dataset):
-    def __init__(self,video_names,labels,sequence_length = 60,transform = None):
+    def __init__(self,video_names,labels,sequence_length = 60,transform = None ,im_size = 112 ):
         self.video_names = video_names
         self.labels = labels
         self.transform = transform
@@ -38,7 +45,7 @@ class video_dataset(Dataset):
 
     def __len__(self):
         return len(self.video_names)
-        
+
     def __getitem__(self,idx):
         video_path = self.video_names[idx]
         frames = []
@@ -60,7 +67,7 @@ class video_dataset(Dataset):
         #print("length:" , len(frames), "label",label)
         return frames,label
     def frame_extract(self,path):
-      vidObj = cv2.VideoCapture(path) 
+      vidObj = cv2.VideoCapture(path)
       success = 1
       while success:
           success, image = vidObj.read()
@@ -82,7 +89,7 @@ import pandas as pd
 
 def number_of_real_and_fake_videos(data_list):
     header_list = ["file", "label"]
-    csv_file_path = "/content/Data/Gobal_metadata.csv"
+    csv_file_path = "/content/drive/MyDrive/Face_only_data/Gobal_metadata.csv"
 
     # Read the CSV file into a pandas DataFrame
     lab = pd.read_csv(csv_file_path, names=header_list)
@@ -117,7 +124,7 @@ from sklearn.model_selection import train_test_split
 import glob
 
 # Define the path to the CSV and video files
-csv_file_path = "/content/Data/Gobal_metadata.csv"
+csv_file_path = "/content/drive/MyDrive/Face_only_data/Gobal_metadata.csv"
 
 # Load the labels
 header_list = ["file", "label"]
@@ -152,8 +159,11 @@ def custom_collate_fn(batch):
     labels = torch.tensor(labels)
     return frames, labels
 
-train_loader = DataLoader(train_data, batch_size=4, shuffle=True, num_workers=4, collate_fn=custom_collate_fn)
-valid_loader = DataLoader(val_data, batch_size=4, shuffle=True, num_workers=4, collate_fn=custom_collate_fn)
+# collate_fn=custom_collate_fn
+
+
+train_loader = DataLoader(train_data, batch_size=2, shuffle=True, num_workers=4 , collate_fn=custom_collate_fn)
+valid_loader = DataLoader(val_data, batch_size=2, shuffle=True, num_workers=4 , collate_fn=custom_collate_fn)
 #Model with feature visualization
 from torch import nn
 from torchvision import models
@@ -186,8 +196,6 @@ import os
 import sys
 import os
 def train_epoch(epoch, num_epochs, data_loader, model, criterion, optimizer):
-    print()
-    print('Training')
     model.train()
     losses = AverageMeter()
     accuracies = AverageMeter()
@@ -213,10 +221,9 @@ def train_epoch(epoch, num_epochs, data_loader, model, criterion, optimizer):
                     len(data_loader),
                     losses.avg,
                     accuracies.avg))
-    torch.save(model.state_dict(), "/content/Data/Trained_Weight/checkpoint_epoch_%d.pt" % epoch)
+    torch.save(model.state_dict(), "/content/drive/MyDrive/Face_only_data/Trained_Weight/checkpoint_epoch_%d.pt" % epoch)
     return losses.avg,accuracies.avg
 def test(epoch,model, data_loader ,criterion):
-    print()
     print('Testing')
     model.eval()
     losses = AverageMeter()
@@ -232,7 +239,7 @@ def test(epoch,model, data_loader ,criterion):
             _,outputs = model(inputs)
             loss = torch.mean(criterion(outputs, targets.type(torch.cuda.LongTensor)))
             acc = calculate_accuracy(outputs,targets.type(torch.cuda.LongTensor))
-            _,p = torch.max(outputs,1) 
+            _,p = torch.max(outputs,1)
             true += (targets.type(torch.cuda.LongTensor)).detach().cpu().numpy().reshape(len(targets)).tolist()
             pred += p.detach().cpu().numpy().reshape(len(p)).tolist()
             losses.update(loss.item(), inputs.size(0))
@@ -317,7 +324,7 @@ def plot_accuracy(train_accuracy,test_accuracy,num_epochs):
 from sklearn.metrics import confusion_matrix
 #learning rate
 lr = 1e-5#0.001
-#number of epochs 
+#number of epochs
 num_epochs = 20
 
 optimizer = torch.optim.Adam(model.parameters(), lr= lr,weight_decay = 1e-5)
